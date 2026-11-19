@@ -1,2 +1,3 @@
 mistralai>=1.0.0
+mistralai-workflows
 httpx>=0.25.0
