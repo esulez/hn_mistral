@@ -102,7 +102,7 @@ async def generate_summary(stories: List[Dict[str, Any]]) -> str:
 
 
 @activity()
-async def generate_audio(summary_text: str, api_key: Optional[str] = None) -> bytes:
+async def generate_audio(summary_text: str, api_key: Optional[str] = None) -> str:
     """Generate audio summary using Mistral TTS."""
     # Get API key from environment if not provided
     # Try both MISTRAL_API_KEY and my_api_key (from deployment secrets)
@@ -151,17 +151,25 @@ async def generate_audio(summary_text: str, api_key: Optional[str] = None) -> by
         response_format=TTS_FORMAT,
     )
 
-    audio_data = base64.b64decode(response.audio_data)
+    # Return audio data as base64 string to allow JSON serialization
+    audio_data = response.audio_data
     return audio_data
 
 
 @activity()
-async def send_digest_email(summary: str, audio_data: bytes) -> Dict[str, Any]:
-    """Send email with digest and audio attachment."""
+async def send_digest_email(summary: str, audio_data: str) -> Dict[str, Any]:
+    """Send email with digest and audio attachment.
+    
+    Args:
+        summary: The text summary
+        audio_data: Base64-encoded audio data string
+    """
+    # Decode to get the size
+    audio_bytes = base64.b64decode(audio_data) if audio_data else b''
     return {
         "to": GMAIL_TO,
         "subject": GMAIL_SUBJECT,
         "summary": summary,
-        "audio_size": len(audio_data),
+        "audio_size": len(audio_bytes),
         "status": "ready_to_send"
     }
