@@ -57,7 +57,7 @@ TTS_MODEL = "voxtral-mini-tts-3-0"
 TTS_VOICE = "voice_478"  # Sheila - Female English (US)
 TTS_FORMAT = "mp3"
 
-@activity
+@activity()
 def fetch_hn_stories() -> List[Dict[str, Any]]:
     """Fetch top stories from HackerNews API."""
     response = httpx.get("https://hacker-news.firebaseio.com/v0/topstories.json")
@@ -76,7 +76,7 @@ def fetch_hn_stories() -> List[Dict[str, Any]]:
 
     return stories
 
-@activity
+@activity()
 def filter_tech_stories(stories: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """Filter stories to only tech industry news."""
     def is_tech_news(story: Dict[str, Any]) -> bool:
@@ -87,7 +87,7 @@ def filter_tech_stories(stories: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
     return [story for story in stories if is_tech_news(story)]
 
-@activity
+@activity()
 def generate_summary(stories: List[Dict[str, Any]]) -> str:
     """Generate a markdown summary of tech stories."""
     if not stories:
@@ -113,7 +113,7 @@ def generate_summary(stories: List[Dict[str, Any]]) -> str:
 
     return "".join(summary_parts)
 
-@activity
+@activity()
 def generate_audio(summary_text: str, api_key: str) -> bytes:
     """Generate audio summary using Mistral TTS."""
     lines = summary_text.split('\n')
@@ -146,7 +146,7 @@ def generate_audio(summary_text: str, api_key: str) -> bytes:
     audio_data = base64.b64decode(response.audio_data)
     return audio_data
 
-@activity
+@activity()
 def send_digest_email(summary: str, audio_data: bytes) -> Dict[str, Any]:
     """Send email with digest and audio attachment."""
     return {
@@ -157,10 +157,11 @@ def send_digest_email(summary: str, audio_data: bytes) -> Dict[str, Any]:
         "status": "ready_to_send"
     }
 
-@workflow
+@workflow.define(name="HackerNewsTechDigestWorkflow")
 class HackerNewsTechDigestWorkflow:
     """Workflow that creates and sends a HackerNews tech digest."""
 
+    @workflow.entrypoint
     def run(self) -> Dict[str, Any]:
         stories = fetch_hn_stories()
         tech_stories = filter_tech_stories(stories)
