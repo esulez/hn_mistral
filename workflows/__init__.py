@@ -33,14 +33,8 @@ class HackerNewsTechDigestWorkflow:
         audio_data = await generate_audio(summary, None)
         result = await send_digest_email(summary, audio_data)
 
-        # Get current time inside unsafe context
-        with workflow.unsafe.imports_passed_through():
-            from datetime import datetime
-            completed_at = datetime.now().isoformat()
-
         return {
             **result,
             "tech_stories_count": len(tech_stories),
             "total_stories_fetched": len(stories),
-            "completed_at": completed_at
         }
