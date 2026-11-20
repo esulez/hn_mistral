@@ -4,10 +4,8 @@ Activities for HackerNews Tech Digest Workflow
 
 import os
 import base64
-import json
-from pathlib import Path
 from datetime import datetime
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 import aiohttp
 
 from mistralai.client import Mistral

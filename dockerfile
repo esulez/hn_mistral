@@ -8,6 +8,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy workflow code
 COPY workflows/ ./workflows/
+COPY activities.py .
 COPY run_worker.py .
 
 # Set environment variables (will be overridden by deployment)
