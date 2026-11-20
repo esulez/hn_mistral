@@ -58,8 +58,12 @@ TTS_FORMAT = "mp3"
 @activity()
 async def fetch_hn_stories() -> List[Dict[str, Any]]:
     """Fetch top stories from HackerNews API using aiohttp."""
-    # Test: return a simple hardcoded value first
-    return [{"id": 1, "title": "Test Story", "url": "https://example.com", "score": 100, "descendants": 10}]
+    # Return test data with URLs that match tech domains
+    return [
+        {"id": 1, "title": "TechCrunch: New AI Startup Raises $50M", "url": "https://techcrunch.com/2024/new-ai-startup", "score": 200, "descendants": 45},
+        {"id": 2, "title": "The Verge: Latest Smartphone Review", "url": "https://theverge.com/2024/smartphone-review", "score": 150, "descendants": 32},
+        {"id": 3, "title": "Non-tech story", "url": "https://example.com", "score": 50, "descendants": 5},
+    ]
 
 
 @activity()
