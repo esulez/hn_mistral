@@ -4,7 +4,6 @@ Activities for HackerNews Tech Digest Workflow
 
 import os
 import base64
-import httpx
 from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Any, Optional
@@ -58,6 +57,7 @@ TTS_FORMAT = "mp3"
 @activity()
 async def fetch_hn_stories() -> List[Dict[str, Any]]:
     """Fetch top stories from HackerNews API."""
+    import httpx
     response = httpx.get("https://hacker-news.firebaseio.com/v0/topstories.json")
     response.raise_for_status()
     story_ids = response.json()[:50]
@@ -117,6 +117,7 @@ async def generate_summary(stories: List[Dict[str, Any]]) -> str:
 @activity()
 async def generate_audio(summary_text: str, api_key: str) -> bytes:
     """Generate audio summary using Mistral TTS."""
+    import httpx
     lines = summary_text.split('\n')
     audio_text_parts = []
 
