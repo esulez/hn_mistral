@@ -2,13 +2,13 @@
 """Entry point for Mistral workflows worker."""
 
 import asyncio
-from mistralai.workflows import run_worker, discover_all_workflows_in_package
+from workflow import HackerNewsTechDigestWorkflow
+from mistralai.workflows import run_worker
 
 
 async def main():
-    # Discover and run all workflows in the current package
-    workflows = discover_all_workflows_in_package(".")
-    await run_worker(workflows)
+    # Run the worker with the specific workflow class
+    await run_worker([HackerNewsTechDigestWorkflow])
 
 
 if __name__ == "__main__":
