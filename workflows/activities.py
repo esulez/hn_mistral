@@ -1,8 +1,5 @@
 """
-HackerNews Tech Digest Workflow
-
-Mistral Workflow that fetches HN front page, filters tech news,
-generates summary and audio, and sends to Gmail.
+Activities for HackerNews Tech Digest Workflow
 """
 
 import os
@@ -13,7 +10,7 @@ from datetime import datetime
 from typing import List, Dict, Any, Optional
 
 from mistralai.client import Mistral
-from mistralai.workflows import workflow, activity
+from mistralai.workflows import activity
 
 # Configuration
 GMAIL_TO = "esulez@gmail.com"
@@ -54,8 +51,9 @@ TECH_DOMAINS = {
 
 # TTS Configuration
 TTS_MODEL = "voxtral-mini-tts-3-0"
-TTS_VOICE = "voice_478"  # Sheila - Female English (US)
+TTS_VOICE = "voice_478"
 TTS_FORMAT = "mp3"
+
 
 @activity()
 async def fetch_hn_stories() -> List[Dict[str, Any]]:
@@ -76,6 +74,7 @@ async def fetch_hn_stories() -> List[Dict[str, Any]]:
 
     return stories
 
+
 @activity()
 async def filter_tech_stories(stories: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """Filter stories to only tech industry news."""
@@ -86,6 +85,7 @@ async def filter_tech_stories(stories: List[Dict[str, Any]]) -> List[Dict[str, A
         return any(domain in url for domain in TECH_DOMAINS)
 
     return [story for story in stories if is_tech_news(story)]
+
 
 @activity()
 async def generate_summary(stories: List[Dict[str, Any]]) -> str:
@@ -112,6 +112,7 @@ async def generate_summary(stories: List[Dict[str, Any]]) -> str:
         summary_parts.append(f"\n")
 
     return "".join(summary_parts)
+
 
 @activity()
 async def generate_audio(summary_text: str, api_key: str) -> bytes:
@@ -146,6 +147,7 @@ async def generate_audio(summary_text: str, api_key: str) -> bytes:
     audio_data = base64.b64decode(response.audio_data)
     return audio_data
 
+
 @activity()
 async def send_digest_email(summary: str, audio_data: bytes) -> Dict[str, Any]:
     """Send email with digest and audio attachment."""
@@ -156,27 +158,3 @@ async def send_digest_email(summary: str, audio_data: bytes) -> Dict[str, Any]:
         "audio_size": len(audio_data),
         "status": "ready_to_send"
     }
-
-@workflow.define(name="HackerNewsTechDigestWorkflow")
-class HackerNewsTechDigestWorkflow:
-    """Workflow that creates and sends a HackerNews tech digest."""
-
-    @workflow.entrypoint
-    async def run(self) -> Dict[str, Any]:
-        stories = await fetch_hn_stories()
-        tech_stories = await filter_tech_stories(stories)
-        summary = await generate_summary(tech_stories)
-
-        api_key = os.environ.get("MISTRAL_API_KEY")
-        if not api_key:
-            raise ValueError("MISTRAL_API_KEY environment variable not set")
-
-        audio_data = await generate_audio(summary, api_key)
-        result = await send_digest_email(summary, audio_data)
-
-        return {
-            **result,
-            "tech_stories_count": len(tech_stories),
-            "total_stories_fetched": len(stories),
-            "completed_at": datetime.now().isoformat()
-        }

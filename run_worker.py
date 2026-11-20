@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import asyncio
-from workflow import HackerNewsTechDigestWorkflow
+from workflows import HackerNewsTechDigestWorkflow
 from mistralai.workflows import run_worker
 
 async def main():
