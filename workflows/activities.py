@@ -8,8 +8,6 @@ import json
 from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Any, Optional
-from urllib.request import urlopen, Request
-from urllib.error import URLError, HTTPError
 
 from mistralai.client import Mistral
 from mistralai.workflows import activity
@@ -59,24 +57,28 @@ TTS_FORMAT = "mp3"
 
 @activity()
 async def fetch_hn_stories() -> List[Dict[str, Any]]:
-    """Fetch top stories from HackerNews API using urllib."""
-    # Fetch top story IDs
-    req = Request("https://hacker-news.firebaseio.com/v0/topstories.json")
-    with urlopen(req) as response:
-        story_ids = json.loads(response.read().decode('utf-8'))[:50]
+    """Fetch top stories from HackerNews API using aiohttp."""
+    import aiohttp
+    async with aiohttp.ClientSession() as session:
+        # Fetch top story IDs
+        async with session.get("https://hacker-news.firebaseio.com/v0/topstories.json") as response:
+            response.raise_for_status()
+            story_ids = await response.json()
+            story_ids = story_ids[:50]
 
-    stories = []
-    for story_id in story_ids:
-        story_url = f"https://hacker-news.firebaseio.com/v0/item/{story_id}.json"
-        try:
-            with urlopen(story_url) as response:
-                story = json.loads(response.read().decode('utf-8'))
-                if story and not story.get("deleted"):
-                    stories.append(story)
-        except (URLError, HTTPError):
-            continue
+        stories = []
+        for story_id in story_ids:
+            story_url = f"https://hacker-news.firebaseio.com/v0/item/{story_id}.json"
+            try:
+                async with session.get(story_url) as response:
+                    if response.status == 200:
+                        story = await response.json()
+                        if story and not story.get("deleted"):
+                            stories.append(story)
+            except Exception:
+                continue
 
-    return stories
+        return stories
 
 
 @activity()
