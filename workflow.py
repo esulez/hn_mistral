@@ -157,7 +157,7 @@ async def send_digest_email(summary: str, audio_data: bytes) -> Dict[str, Any]:
         "status": "ready_to_send"
     }
 
-@workflow.define(name="HackerNewsTechDigestWorkflow")
+@workflow.define(name="workflow.HackerNewsTechDigestWorkflow")
 class HackerNewsTechDigestWorkflow:
     """Workflow that creates and sends a HackerNews tech digest."""
 
