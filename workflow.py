@@ -58,17 +58,17 @@ TTS_VOICE = "voice_478"  # Sheila - Female English (US)
 TTS_FORMAT = "mp3"
 
 @activity()
-def fetch_hn_stories() -> List[Dict[str, Any]]:
+async def fetch_hn_stories() -> List[Dict[str, Any]]:
     """Fetch top stories from HackerNews API."""
     response = httpx.get("https://hacker-news.firebaseio.com/v0/topstories.json")
     response.raise_for_status()
     story_ids = response.json()[:50]
 
     stories = []
-    with httpx.Client() as client:
+    async with httpx.AsyncClient() as client:
         for story_id in story_ids:
             story_url = f"https://hacker-news.firebaseio.com/v0/item/{story_id}.json"
-            story_response = client.get(story_url)
+            story_response = await client.get(story_url)
             if story_response.status_code == 200:
                 story = story_response.json()
                 if story and not story.get("deleted"):
@@ -77,7 +77,7 @@ def fetch_hn_stories() -> List[Dict[str, Any]]:
     return stories
 
 @activity()
-def filter_tech_stories(stories: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+async def filter_tech_stories(stories: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """Filter stories to only tech industry news."""
     def is_tech_news(story: Dict[str, Any]) -> bool:
         url = story.get("url", "").lower()
@@ -88,7 +88,7 @@ def filter_tech_stories(stories: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     return [story for story in stories if is_tech_news(story)]
 
 @activity()
-def generate_summary(stories: List[Dict[str, Any]]) -> str:
+async def generate_summary(stories: List[Dict[str, Any]]) -> str:
     """Generate a markdown summary of tech stories."""
     if not stories:
         return "No tech industry news found on HackerNews front page."
@@ -114,7 +114,7 @@ def generate_summary(stories: List[Dict[str, Any]]) -> str:
     return "".join(summary_parts)
 
 @activity()
-def generate_audio(summary_text: str, api_key: str) -> bytes:
+async def generate_audio(summary_text: str, api_key: str) -> bytes:
     """Generate audio summary using Mistral TTS."""
     lines = summary_text.split('\n')
     audio_text_parts = []
@@ -147,7 +147,7 @@ def generate_audio(summary_text: str, api_key: str) -> bytes:
     return audio_data
 
 @activity()
-def send_digest_email(summary: str, audio_data: bytes) -> Dict[str, Any]:
+async def send_digest_email(summary: str, audio_data: bytes) -> Dict[str, Any]:
     """Send email with digest and audio attachment."""
     return {
         "to": GMAIL_TO,
@@ -162,17 +162,17 @@ class HackerNewsTechDigestWorkflow:
     """Workflow that creates and sends a HackerNews tech digest."""
 
     @workflow.entrypoint
-    def run(self) -> Dict[str, Any]:
-        stories = fetch_hn_stories()
-        tech_stories = filter_tech_stories(stories)
-        summary = generate_summary(tech_stories)
+    async def run(self) -> Dict[str, Any]:
+        stories = await fetch_hn_stories()
+        tech_stories = await filter_tech_stories(stories)
+        summary = await generate_summary(tech_stories)
 
         api_key = os.environ.get("MISTRAL_API_KEY")
         if not api_key:
             raise ValueError("MISTRAL_API_KEY environment variable not set")
 
-        audio_data = generate_audio(summary, api_key)
-        result = send_digest_email(summary, audio_data)
+        audio_data = await generate_audio(summary, api_key)
+        result = await send_digest_email(summary, audio_data)
 
         return {
             **result,
