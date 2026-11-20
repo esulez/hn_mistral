@@ -13,4 +13,4 @@ COPY workflow.py .
 ENV MISTRAL_API_KEY=""
 
 # Command to run the worker
-CMD ["python", "-m", "mistralai.workflows.worker", "--workflow", "workflow.HackerNewsTechDigestWorkflow"]
+CMD ["python", "run_worker.py"]
