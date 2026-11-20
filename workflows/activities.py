@@ -4,9 +4,12 @@ Activities for HackerNews Tech Digest Workflow
 
 import os
 import base64
+import json
 from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Any, Optional
+from urllib.request import urlopen, Request
+from urllib.error import URLError, HTTPError
 
 from mistralai.client import Mistral
 from mistralai.workflows import activity
@@ -56,24 +59,24 @@ TTS_FORMAT = "mp3"
 
 @activity()
 async def fetch_hn_stories() -> List[Dict[str, Any]]:
-    """Fetch top stories from HackerNews API."""
-    import httpx
-    async with httpx.AsyncClient() as client:
-        # Fetch top story IDs
-        response = await client.get("https://hacker-news.firebaseio.com/v0/topstories.json")
-        response.raise_for_status()
-        story_ids = response.json()[:50]
+    """Fetch top stories from HackerNews API using urllib."""
+    # Fetch top story IDs
+    req = Request("https://hacker-news.firebaseio.com/v0/topstories.json")
+    with urlopen(req) as response:
+        story_ids = json.loads(response.read().decode('utf-8'))[:50]
 
-        stories = []
-        for story_id in story_ids:
-            story_url = f"https://hacker-news.firebaseio.com/v0/item/{story_id}.json"
-            story_response = await client.get(story_url)
-            if story_response.status_code == 200:
-                story = story_response.json()
+    stories = []
+    for story_id in story_ids:
+        story_url = f"https://hacker-news.firebaseio.com/v0/item/{story_id}.json"
+        try:
+            with urlopen(story_url) as response:
+                story = json.loads(response.read().decode('utf-8'))
                 if story and not story.get("deleted"):
                     stories.append(story)
+        except (URLError, HTTPError):
+            continue
 
-        return stories
+    return stories
 
 
 @activity()
