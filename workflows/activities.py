@@ -59,26 +59,8 @@ TTS_FORMAT = "mp3"
 @activity()
 async def fetch_hn_stories() -> List[Dict[str, Any]]:
     """Fetch top stories from HackerNews API using aiohttp."""
-    async with aiohttp.ClientSession() as session:
-        # Fetch top story IDs
-        async with session.get("https://hacker-news.firebaseio.com/v0/topstories.json") as response:
-            response.raise_for_status()
-            story_ids = await response.json()
-            story_ids = story_ids[:50]
-
-        stories = []
-        for story_id in story_ids:
-            story_url = f"https://hacker-news.firebaseio.com/v0/item/{story_id}.json"
-            try:
-                async with session.get(story_url) as response:
-                    if response.status == 200:
-                        story = await response.json()
-                        if story and not story.get("deleted"):
-                            stories.append(story)
-            except Exception:
-                continue
-
-        return stories
+    # Test: return a simple hardcoded value first
+    return [{"id": 1, "title": "Test Story", "url": "https://example.com", "score": 100, "descendants": 10}]
 
 
 @activity()
