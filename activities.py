@@ -3,6 +3,7 @@ Activities for HackerNews Tech Digest Workflow
 """
 
 import os
+import re
 import base64
 from datetime import datetime
 from typing import List, Dict, Any, Optional
@@ -111,24 +112,36 @@ async def generate_audio(summary_text: str, api_key: Optional[str] = None) -> by
     if not api_key:
         raise ValueError("MISTRAL_API_KEY or my_api_key environment variable not set")
     
+    # Extract story titles and create a clean audio text
+    # Split by lines and process markdown
     lines = summary_text.split('\n')
     audio_text_parts = []
 
-    in_stories = False
     for line in lines:
-        if '## Top' in line:
-            audio_text_parts.append(line.replace('#', '').replace('*', '').strip())
-            in_stories = True
-        elif in_stories and line.startswith('###'):
-            story_text = line.replace('#', '').strip()
-            if '][' in story_text:
-                title_part = story_text.split('][')[1].split(']')[0]
-                story_num = story_text.split('.')[0].split()[-1]
-                audio_text_parts.append(f"Story {story_num}. {title_part}.")
-        elif in_stories and line.startswith('- **Score'):
-            pass
+        # Skip empty lines
+        if not line.strip():
+            continue
+        # Remove markdown headers
+        if line.startswith('#'):
+            text = line.lstrip('#').strip()
+            # Remove markdown links [text](url)
+            text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', text)
+            audio_text_parts.append(text)
+        # Skip score/comment lines
+        elif line.startswith('- **Score') or line.startswith('- **Comments'):
+            continue
+        # For story lines with markdown links, extract the text
+        elif '[[' in line or '][' in line:
+            text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', line)
+            text = re.sub(r'[#*\-]', '', text).strip()
+            if text:
+                audio_text_parts.append(text)
 
     audio_text = ' '.join(audio_text_parts)
+    
+    # If audio_text is empty, use the full summary as fallback
+    if not audio_text.strip():
+        audio_text = summary_text
 
     client = Mistral(api_key=api_key)
     response = client.audio.speech.complete(
