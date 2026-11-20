@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Any, Optional
+import aiohttp
 
 from mistralai.client import Mistral
 from mistralai.workflows import activity
@@ -58,7 +59,6 @@ TTS_FORMAT = "mp3"
 @activity()
 async def fetch_hn_stories() -> List[Dict[str, Any]]:
     """Fetch top stories from HackerNews API using aiohttp."""
-    import aiohttp
     async with aiohttp.ClientSession() as session:
         # Fetch top story IDs
         async with session.get("https://hacker-news.firebaseio.com/v0/topstories.json") as response:
