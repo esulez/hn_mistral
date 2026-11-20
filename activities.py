@@ -104,11 +104,12 @@ async def generate_summary(stories: List[Dict[str, Any]]) -> str:
 async def generate_audio(summary_text: str, api_key: Optional[str] = None) -> bytes:
     """Generate audio summary using Mistral TTS."""
     # Get API key from environment if not provided
+    # Try both MISTRAL_API_KEY and my_api_key (from deployment secrets)
     if api_key is None:
-        api_key = os.environ.get("MISTRAL_API_KEY")
+        api_key = os.environ.get("MISTRAL_API_KEY") or os.environ.get("my_api_key")
     
     if not api_key:
-        raise ValueError("MISTRAL_API_KEY environment variable not set")
+        raise ValueError("MISTRAL_API_KEY or my_api_key environment variable not set")
     
     lines = summary_text.split('\n')
     audio_text_parts = []
