@@ -14,16 +14,17 @@ class HackerNewsTechDigestWorkflow:
 
     @workflow.entrypoint
     async def run(self) -> dict:
-        # Import activities inside the workflow method to avoid sandbox restrictions
-        from .activities import (
-            fetch_hn_stories,
-            filter_tech_stories,
-            generate_summary,
-            generate_audio,
-            send_digest_email,
-        )
         import os
         from datetime import datetime
+        import importlib
+
+        # Dynamically import activities to avoid sandbox restrictions
+        activities_mod = importlib.import_module(".activities", package="workflows")
+        fetch_hn_stories = activities_mod.fetch_hn_stories
+        filter_tech_stories = activities_mod.filter_tech_stories
+        generate_summary = activities_mod.generate_summary
+        generate_audio = activities_mod.generate_audio
+        send_digest_email = activities_mod.send_digest_email
 
         stories = await fetch_hn_stories()
         tech_stories = await filter_tech_stories(stories)
