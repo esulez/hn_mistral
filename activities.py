@@ -5,8 +5,12 @@ Activities for HackerNews Tech Digest Workflow
 import os
 import re
 import base64
+import smtplib
 from datetime import datetime
 from typing import List, Dict, Any, Optional
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.audio import MIMEAudio
 import aiohttp
 
 from mistralai.client import Mistral
@@ -15,6 +19,10 @@ from mistralai.workflows import activity
 # Configuration
 GMAIL_TO = "esulez@gmail.com"
 GMAIL_SUBJECT = "HackerNews Tech Digest"
+
+# SMTP Configuration
+SMTP_SERVER = "smtp.gmail.com"
+SMTP_PORT = 587
 
 # Tech news domains to filter by
 TECH_DOMAINS = {
@@ -168,12 +176,57 @@ async def send_digest_email(summary: str, audio_data: str) -> Dict[str, Any]:
         summary: The text summary
         audio_data: Base64-encoded audio data string
     """
-    # Decode to get the size
+    # Get Gmail credentials from environment
+    gmail_user = os.environ.get("GMAIL_USER") or os.environ.get("gmail_user")
+    gmail_password = os.environ.get("GMAIL_PASSWORD") or os.environ.get("gmail_password")
+    
+    # Decode audio data
     audio_bytes = base64.b64decode(audio_data) if audio_data else b''
-    return {
-        "to": GMAIL_TO,
-        "subject": GMAIL_SUBJECT,
-        "summary": summary,
-        "audio_size": len(audio_bytes),
-        "status": "ready_to_send"
-    }
+    
+    # If no Gmail credentials, return metadata (for testing)
+    if not gmail_user or not gmail_password:
+        return {
+            "to": GMAIL_TO,
+            "subject": GMAIL_SUBJECT,
+            "summary": summary,
+            "audio_size": len(audio_bytes),
+            "status": "skipped_no_credentials"
+        }
+    
+    # Create email message
+    msg = MIMEMultipart()
+    msg["From"] = gmail_user
+    msg["To"] = GMAIL_TO
+    msg["Subject"] = GMAIL_SUBJECT
+    
+    # Attach summary as plain text
+    msg.attach(MIMEText(summary, "plain"))
+    
+    # Attach audio file
+    if audio_bytes:
+        audio_attachment = MIMEAudio(audio_bytes, _subtype="mp3")
+        audio_attachment.add_header("Content-Disposition", "attachment", filename="digest.mp3")
+        msg.attach(audio_attachment)
+    
+    # Send email via SMTP
+    try:
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+            server.starttls()
+            server.login(gmail_user, gmail_password)
+            server.send_message(msg)
+        
+        return {
+            "to": GMAIL_TO,
+            "subject": GMAIL_SUBJECT,
+            "summary": summary,
+            "audio_size": len(audio_bytes),
+            "status": "sent"
+        }
+    except Exception as e:
+        return {
+            "to": GMAIL_TO,
+            "subject": GMAIL_SUBJECT,
+            "summary": summary,
+            "audio_size": len(audio_bytes),
+            "status": f"failed: {str(e)}"
+        }
