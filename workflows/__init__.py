@@ -30,9 +30,11 @@ class HackerNewsTechDigestWorkflow:
         tech_stories = await filter_tech_stories(stories)
         summary = await generate_summary(tech_stories)
 
-        api_key = os.environ.get("MISTRAL_API_KEY")
-        if not api_key:
-            raise ValueError("MISTRAL_API_KEY environment variable not set")
+        # Use unsafe to access environment variables in sandbox
+        with workflow.unsafe.imports_passed_through():
+            api_key = os.environ.get("MISTRAL_API_KEY")
+            if not api_key:
+                raise ValueError("MISTRAL_API_KEY environment variable not set")
 
         audio_data = await generate_audio(summary, api_key)
         result = await send_digest_email(summary, audio_data)
