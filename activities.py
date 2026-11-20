@@ -5,7 +5,7 @@ Activities for HackerNews Tech Digest Workflow
 import os
 import base64
 from datetime import datetime
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import aiohttp
 
 from mistralai.client import Mistral
@@ -101,8 +101,15 @@ async def generate_summary(stories: List[Dict[str, Any]]) -> str:
 
 
 @activity()
-async def generate_audio(summary_text: str, api_key: str) -> bytes:
+async def generate_audio(summary_text: str, api_key: Optional[str] = None) -> bytes:
     """Generate audio summary using Mistral TTS."""
+    # Get API key from environment if not provided
+    if api_key is None:
+        api_key = os.environ.get("MISTRAL_API_KEY")
+    
+    if not api_key:
+        raise ValueError("MISTRAL_API_KEY environment variable not set")
+    
     lines = summary_text.split('\n')
     audio_text_parts = []
 

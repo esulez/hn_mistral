@@ -17,6 +17,10 @@ class HackerNewsTechDigestWorkflow:
         import os
         from datetime import datetime
 
+        # Get API key from environment (this is in workflow sandbox, need to use unsafe)
+        # But actually, let's move this to the activity
+        # For now, just pass None and let the activity handle it
+        
         # Import activities from top-level module
         from activities import (
             fetch_hn_stories,
@@ -30,13 +34,8 @@ class HackerNewsTechDigestWorkflow:
         tech_stories = await filter_tech_stories(stories)
         summary = await generate_summary(tech_stories)
 
-        # Use unsafe to access environment variables in sandbox
-        with workflow.unsafe.skip_determinism_enforcement():
-            api_key = os.environ.get("MISTRAL_API_KEY")
-            if not api_key:
-                raise ValueError("MISTRAL_API_KEY environment variable not set")
-
-        audio_data = await generate_audio(summary, api_key)
+        # Don't access os.environ in workflow - pass None and let activity get it
+        audio_data = await generate_audio(summary, None)
         result = await send_digest_email(summary, audio_data)
 
         return {
