@@ -16,14 +16,15 @@ class HackerNewsTechDigestWorkflow:
     async def run(self) -> dict:
         from datetime import datetime
 
-        # Import activities from top-level module
-        from activities import (
-            fetch_hn_stories,
-            filter_tech_stories,
-            generate_summary,
-            generate_audio,
-            send_digest_email,
-        )
+        # Import activities with unsafe context to allow os.environ access
+        with workflow.unsafe.imports_passed_through():
+            from activities import (
+                fetch_hn_stories,
+                filter_tech_stories,
+                generate_summary,
+                generate_audio,
+                send_digest_email,
+            )
 
         stories = await fetch_hn_stories()
         tech_stories = await filter_tech_stories(stories)
